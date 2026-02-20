@@ -6,9 +6,12 @@
 //
 
 import SwiftUI
+import Combine
 
 struct ResultsView: View {
     let calculator: TipCalculator
+    @StateObject private var paymentCoordinator = PaymentCoordinator()
+    @State private var showingPaymentAlert = false
     
     var body: some View {
         VStack(spacing: 16) {
@@ -57,11 +60,59 @@ struct ResultsView: View {
                 .padding(.vertical, 16)
                 .background(Color.accentColor.opacity(0.1))
                 .cornerRadius(12)
+                
+                // Send Payment Button
+                Button {
+                    handleSendPayment()
+                } label: {
+                    HStack {
+                        Image(systemName: "paperplane.fill")
+                        Text("Send via Apple Cash")
+                    }
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.accentColor)
+                    .foregroundStyle(.white)
+                    .cornerRadius(12)
+                }
+                .disabled(!paymentCoordinator.canSendMessages)
             }
         }
         .padding()
         .background(Color(.systemGray6))
         .cornerRadius(16)
+        .sheet(isPresented: $paymentCoordinator.isShowingContactPicker) {
+            ContactPickerView(
+                isPresented: $paymentCoordinator.isShowingContactPicker,
+                onSelect: { contacts in
+                    paymentCoordinator.didSelectContacts(contacts)
+                }
+            )
+        }
+        .sheet(isPresented: $paymentCoordinator.isShowingMessageComposer) {
+            if let composer = paymentCoordinator.createMessageComposer() {
+                MessageComposerView(
+                    composer: composer,
+                    delegate: paymentCoordinator
+                )
+            }
+        }
+        .alert("Payment Error", isPresented: .constant(paymentCoordinator.errorMessage != nil)) {
+            Button("OK") {
+                paymentCoordinator.errorMessage = nil
+            }
+        } message: {
+            if let error = paymentCoordinator.errorMessage {
+                Text(error)
+            }
+        }
+    }
+    
+    private func handleSendPayment() {
+        let amount = calculator.result.amountPerPerson
+        let message = "Your share from our meal"
+        paymentCoordinator.sendPayment(amount: amount, message: message)
     }
 }
 
