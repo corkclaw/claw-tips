@@ -30,6 +30,9 @@ struct TipResult {
     
     /// Total rounded up to nearest dollar
     var roundedTotal: Decimal {
-        totalAmount.rounded(.up, scale: 0)
+        var result = totalAmount
+        var rounded = Decimal()
+        NSDecimalRound(&rounded, &result, 0, .up)
+        return rounded
     }
 }

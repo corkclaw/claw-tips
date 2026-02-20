@@ -51,7 +51,7 @@ struct ResultsView: View {
                     
                     Text(calculator.formattedAmountPerPerson)
                         .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .foregroundStyle(.accentColor)
+                        .foregroundStyle(Color.accentColor)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)

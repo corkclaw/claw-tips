@@ -25,7 +25,7 @@ struct SplitControlView: View {
                 } label: {
                     Image(systemName: "minus.circle.fill")
                         .font(.title)
-                        .foregroundStyle(splitCount > 1 ? .accentColor : .gray)
+                        .foregroundStyle(splitCount > 1 ? Color.accentColor : Color.gray)
                 }
                 .disabled(splitCount <= 1)
                 
@@ -51,7 +51,7 @@ struct SplitControlView: View {
                 } label: {
                     Image(systemName: "plus.circle.fill")
                         .font(.title)
-                        .foregroundStyle(splitCount < 20 ? .accentColor : .gray)
+                        .foregroundStyle(splitCount < 20 ? Color.accentColor : Color.gray)
                 }
                 .disabled(splitCount >= 20)
             }
