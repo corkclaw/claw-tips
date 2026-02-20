@@ -11,6 +11,7 @@ import MessageUI
 import Contacts
 import ContactsUI
 import SwiftUI
+import UIKit
 
 /// Coordinates payment sending via Apple Cash/Messages
 class PaymentCoordinator: NSObject, ObservableObject {
@@ -28,15 +29,41 @@ class PaymentCoordinator: NSObject, ObservableObject {
     }
     
     /// Initiate payment send flow
-    func sendPayment(amount: Decimal, message: String) {
-        guard canSendMessages else {
-            errorMessage = "Messages is not available on this device"
-            return
-        }
-        
+    func sendPayment(amount: Decimal, message: String, method: PaymentMethod) {
         pendingAmount = amount
         pendingMessage = message
-        isShowingContactPicker = true
+        
+        switch method {
+        case .appleCash:
+            guard canSendMessages else {
+                errorMessage = "Messages is not available on this device"
+                return
+            }
+            isShowingContactPicker = true
+            
+        case .venmo:
+            openVenmo(amount: amount, note: message)
+            
+        case .zelle:
+            showZelleInstructions(amount: amount)
+        }
+    }
+    
+    private func openVenmo(amount: Decimal, note: String) {
+        if let url = PaymentMethod.venmo.deepLinkURL(amount: amount, note: note) {
+            UIApplication.shared.open(url) { success in
+                if !success {
+                    self.errorMessage = "Venmo app not installed. Please install Venmo to send payments."
+                }
+            }
+        } else {
+            errorMessage = "Unable to open Venmo"
+        }
+    }
+    
+    private func showZelleInstructions(amount: Decimal) {
+        let formattedAmount = formatCurrency(amount)
+        errorMessage = "Send \(formattedAmount) via Zelle:\n\n1. Open your banking app\n2. Find Zelle\n3. Send to recipient's email or phone\n4. Amount: \(formattedAmount)"
     }
     
     /// Create message composer with payment details

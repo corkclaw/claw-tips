@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Combine
+import UIKit
 
 struct ResultsView: View {
     let calculator: TipCalculator
@@ -61,22 +62,24 @@ struct ResultsView: View {
                 .background(Color.accentColor.opacity(0.1))
                 .cornerRadius(12)
                 
-                // Send Payment Button
-                Button {
-                    handleSendPayment()
-                } label: {
-                    HStack {
-                        Image(systemName: "paperplane.fill")
-                        Text("Send via Apple Cash")
+                // Payment Method Buttons
+                VStack(spacing: 8) {
+                    Text("Send Payment")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    
+                    HStack(spacing: 12) {
+                        ForEach(PaymentMethod.allCases, id: \.self) { method in
+                            PaymentButton(
+                                method: method,
+                                isEnabled: method.isAvailable,
+                                action: {
+                                    handleSendPayment(method: method)
+                                }
+                            )
+                        }
                     }
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.accentColor)
-                    .foregroundStyle(.white)
-                    .cornerRadius(12)
                 }
-                .disabled(!paymentCoordinator.canSendMessages)
             }
         }
         .padding()
@@ -98,7 +101,10 @@ struct ResultsView: View {
                 )
             }
         }
-        .alert("Payment Error", isPresented: .constant(paymentCoordinator.errorMessage != nil)) {
+        .alert(
+            paymentCoordinator.errorMessage?.contains("Zelle") == true ? "Send via Zelle" : "Payment Notice",
+            isPresented: .constant(paymentCoordinator.errorMessage != nil)
+        ) {
             Button("OK") {
                 paymentCoordinator.errorMessage = nil
             }
@@ -109,10 +115,45 @@ struct ResultsView: View {
         }
     }
     
-    private func handleSendPayment() {
+    private func handleSendPayment(method: PaymentMethod) {
         let amount = calculator.result.amountPerPerson
         let message = "Your share from our meal"
-        paymentCoordinator.sendPayment(amount: amount, message: message)
+        paymentCoordinator.sendPayment(amount: amount, message: message, method: method)
+    }
+}
+
+// MARK: - Payment Button Component
+
+struct PaymentButton: View {
+    let method: PaymentMethod
+    let isEnabled: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 6) {
+                Image(systemName: method.iconName)
+                    .font(.system(size: 28))
+                    .foregroundStyle(isEnabled ? .white : .gray)
+                
+                Text(method.rawValue)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(isEnabled ? .white : .gray)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .padding(.horizontal, 8)
+            .background(
+                isEnabled
+                    ? method.brandColor
+                    : Color.gray.opacity(0.3)
+            )
+            .cornerRadius(12)
+        }
+        .disabled(!isEnabled)
     }
 }
 
